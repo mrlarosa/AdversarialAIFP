@@ -1,4 +1,4 @@
-from os import pread
+#from os import pread
 import torch
 import torch.nn as nn
 from scipy.io.wavfile import read

@@ -7,12 +7,14 @@ from os import listdir
 from os.path import isfile, join
 from tqdm import tqdm
 
+from wav2vec import Wav2Vec2_Data, Wav2Vec2Classifier
+
 bs= 512
 NUM_EPOCHS = 100
 criterion = nn.BCELoss()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-root = "/Users/matthewlarosa/Downloads/for-2seconds/"
+root = "C:/Users/razaa/Downloads/AdversarialAIFP/for-2seconds/"
 training_real = root + "training/real"
 training_fake = root + "validation/fake"
 validation_real = root + "training/real"
@@ -24,13 +26,20 @@ training_fake = [training_fake + '/'+ f for f in listdir(training_fake) if isfil
 validation_real = [validation_real + '/'+ f for f in listdir(validation_real) if isfile(join(validation_real, f))]
 validation_fake = [validation_fake + '/'+ f for f in listdir(validation_fake) if isfile(join(validation_fake, f))]
 
-tr_ds = sound_data(training_real, training_fake)
-val_ds = sound_data(validation_real, validation_fake)
+print("W")
+
+tr_ds = Wav2Vec2_Data(training_real, training_fake)
+val_ds = Wav2Vec2_Data(validation_real, validation_fake)
+
+print("L")
 
 tr_ldr = DataLoader(tr_ds, batch_size=bs, shuffle=True)
 val_ldr = DataLoader(val_ds, batch_size=bs, shuffle=True)
 
-model = LSTMmodel(32000, 64).to(device)
+
+
+wav2vec_model_name = "facebook/wav2vec2-base"
+model = Wav2Vec2Classifier(wav2vec_model_name, 64, 16, 1).to(device)
 optimizer = optim.AdamW(model.parameters(), lr=0.01)
 
 ###############
