@@ -47,15 +47,22 @@ for ds in datasets:
 
 wav2vec_model_name = "facebook/wav2vec2-base"
 model = Wav2Vec2Classifier(wav2vec_model_name, 64, 16, 1, False)
-model_save_path = "./saves/basic_model/model_just_mlp.pt"
+model_save_path = "/scratch/mrl78/AdversarialAIFP/saves/finetuned_model/model_just_mlp.pt"
+
+#Fine tune last 2 layers
+for param in model.linear3.parameters():
+    param.requires_grad = False
+for param in model.linear4.parameters():
+    param.requires_grad = False
 
 if torch.cuda.device_count() > 1:
     print(f"Using {torch.cuda.device_count()} GPUs!")
     model = nn.DataParallel(model)
 
 model.to(device)
+model.load_state_dict(torch.load("/scratch/mrl78/AdversarialAIFP/saves/basic_model/model_just_mlp.pt"))
 
-optimizer = optim.AdamW(model.parameters(), lr=0.0001)
+optimizer = optim.AdamW(model.parameters(), lr=0.00001)
 
 ###############
 # Train Model #
@@ -72,7 +79,7 @@ for epoch in tqdm(range(NUM_EPOCHS)):
     stutter_loss = 0
 
     model.train()
-    for data, label in ldr["Normal"]["train"]:
+    for data, label in ldr["Children"]["train"]:
         data = data.to(device)
         label = label.to(device)
         
@@ -113,7 +120,7 @@ for epoch in tqdm(range(NUM_EPOCHS)):
             stutter_loss += loss.item()
  
     print("Training: ", tr_loss, "\tValidation: ", val_loss)
-    tr_losses.append(tr_loss / len(ldr["Normal"]["train"]))
+    tr_losses.append(tr_loss / len(ldr["Children"]["train"]))
     losses_normal.append(val_loss / len(ldr["Normal"]["validation"]))
     losses_children.append(children_loss / len(ldr["Children"]["validation"]))
     losses_stutter.append(stutter_loss / len(ldr["Stutter"]["validation"]))
@@ -121,7 +128,7 @@ for epoch in tqdm(range(NUM_EPOCHS)):
 torch.save(model.state_dict(), model_save_path)
 
 # Save lists
-with open("./saves/basic_model/losses.pkl", "wb") as f:
+with open("/scratch/mrl78/AdversarialAIFP/saves/finetuned_model/losses.pkl", "wb") as f:
     pickle.dump({"tr_losses": tr_losses,
                  "losses_normal": losses_normal, 
                  "losses_children": losses_children,
